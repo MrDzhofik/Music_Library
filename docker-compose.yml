@@ -1,0 +1,17 @@
+version: "3.9"
+services:
+  postgres:
+    image: postgres:14.8
+    environment:
+      POSTGRES_DB: "effectivemobile"
+      POSTGRES_USER: "effectiveuser"
+      POSTGRES_PASSWORD: "pgeffective2"
+    volumes:
+      - ./music.sql:/docker-entrypoint-initdb.d/music.sql
+    ports:
+      - "6543:5432"
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512MB

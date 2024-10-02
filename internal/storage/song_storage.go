@@ -33,17 +33,22 @@ func NewSongStorage(db *pgx.Conn, infoLog, errorLog *log.Logger) SongStorage {
 }
 
 func (s *songStorage) GetAllSongs(ctx context.Context) ([]models.Song, error) {
+	s.infoLog.Print("Запускаем SQL запрос по получению всех песен")
 	query := `SELECT song_name name, group_name, release_date, link 
 	FROM songs s
 	INNER JOIN groups g ON g.id = s.group_id`
 
 	var songs []models.Song
 	err := pgxscan.Select(context.Background(), s.db, &songs, query)
+	if err != nil {
+		s.errorLog.Println(err)
+	}
 
 	return songs, err
 }
 
 func (s *songStorage) GetSongByID(ctx context.Context, id int) (models.Song, error) {
+	s.infoLog.Print("Запускаем SQL запрос по получению песни по ID")
 	query := `SELECT song_name name, group_name, release_date, text, link 
 	FROM songs s
 	INNER JOIN groups g ON g.id = s.group_id
@@ -51,30 +56,43 @@ func (s *songStorage) GetSongByID(ctx context.Context, id int) (models.Song, err
 
 	var song []models.Song
 	err := pgxscan.Select(context.Background(), s.db, &song, query, id)
+	if err != nil {
+		s.errorLog.Println(err)
+	}
 
 	return song[0], err
 }
 
 func (s *songStorage) DeleteSong(ctx context.Context, id int) error {
+	s.infoLog.Print("Запускаем SQL запрос по удалению песни по ID")
 	query := `DELETE FROM songs WHERE id = $1`
 
 	_, err := s.db.Exec(context.Background(), query, id)
+	if err != nil {
+		s.errorLog.Println(err)
+	}
 
 	return err
 }
 
 func (s *songStorage) AddSong(ctx context.Context, song models.Song) error {
+	s.infoLog.Print("Запускаем SQL запрос по добавлению песни")
 	query := "INSERT INTO songs (group_id, song_name) VALUES ($1, $2)"
 	_, err := s.db.Exec(
 		context.Background(),
 		query,
 		song.Group, song.Name,
 	)
+	if err != nil {
+		s.errorLog.Println(err)
+	}
 	return err
 }
 
 func (s *songStorage) AddGroup(ctx context.Context, group models.Group) (int, error) {
 	var groupID int
+
+	s.infoLog.Print("Запускаем SQL запрос по добавлению группы")
 
 	// Сначала проверим, существует ли уже такая группа (артист)
 	query := `SELECT id FROM groups WHERE group_name = $1`
@@ -86,6 +104,7 @@ func (s *songStorage) AddGroup(ctx context.Context, group models.Group) (int, er
 	}
 
 	if err != pgx.ErrNoRows {
+		s.errorLog.Println(err)
 		// Произошла ошибка, отличная от "запись не найдена"
 		return 0, err
 	}
@@ -96,15 +115,23 @@ func (s *songStorage) AddGroup(ctx context.Context, group models.Group) (int, er
 		query,
 		group.Name,
 	).Scan(&groupID)
+	if err != nil {
+		s.errorLog.Println(err)
+	}
 	return groupID, err
 }
 
 func (s *songStorage) UpdateSong(ctx context.Context, id int, newSong models.Song) error {
+	s.infoLog.Print("Запускаем SQL запрос по обновлению песни по ID")
+
 	query := "UPDATE songs SET song_name = $1, text = $2, link = $3 WHERE id = $4"
 	_, err := s.db.Exec(
 		context.Background(),
 		query,
 		newSong.Name, newSong.Text, newSong.Link, id,
 	)
+	if err != nil {
+		s.errorLog.Println(err)
+	}
 	return err
 }
