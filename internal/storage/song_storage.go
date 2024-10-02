@@ -2,9 +2,8 @@ package storage
 
 import (
 	"context"
-	"fmt"
-
 	"effectiveMobile/models"
+	"log"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/jackc/pgx/v5"
@@ -20,11 +19,17 @@ type SongStorage interface {
 }
 
 type songStorage struct {
-	db *pgx.Conn
+	db       *pgx.Conn
+	infoLog  *log.Logger
+	errorLog *log.Logger
 }
 
-func NewSongStorage(db *pgx.Conn) SongStorage {
-	return &songStorage{db: db}
+func NewSongStorage(db *pgx.Conn, infoLog, errorLog *log.Logger) SongStorage {
+	return &songStorage{
+		db:       db,
+		infoLog:  infoLog,
+		errorLog: errorLog,
+	}
 }
 
 func (s *songStorage) GetAllSongs(ctx context.Context) ([]models.Song, error) {
@@ -47,7 +52,6 @@ func (s *songStorage) GetSongByID(ctx context.Context, id int) (models.Song, err
 	var song []models.Song
 	err := pgxscan.Select(context.Background(), s.db, &song, query, id)
 
-	fmt.Println(err)
 	return song[0], err
 }
 
@@ -60,11 +64,11 @@ func (s *songStorage) DeleteSong(ctx context.Context, id int) error {
 }
 
 func (s *songStorage) AddSong(ctx context.Context, song models.Song) error {
-	query := "INSERT INTO Song (artist_id, song_name, release_date, lyrics, link) VALUES ($1, $2, $3, $4, $5)"
+	query := "INSERT INTO songs (group_id, song_name) VALUES ($1, $2)"
 	_, err := s.db.Exec(
 		context.Background(),
 		query,
-		song.Group, song.Name, song.ReleaseDate, song.Text, song.Link,
+		song.Group, song.Name,
 	)
 	return err
 }
@@ -73,7 +77,7 @@ func (s *songStorage) AddGroup(ctx context.Context, group models.Group) (int, er
 	var groupID int
 
 	// Сначала проверим, существует ли уже такая группа (артист)
-	query := `SELECT id FROM Artist WHERE artist_name = $1`
+	query := `SELECT id FROM groups WHERE group_name = $1`
 	err := s.db.QueryRow(ctx, query, group.Name).Scan(&groupID)
 
 	if err == nil {
@@ -96,11 +100,11 @@ func (s *songStorage) AddGroup(ctx context.Context, group models.Group) (int, er
 }
 
 func (s *songStorage) UpdateSong(ctx context.Context, id int, newSong models.Song) error {
-	query := "UPDATE Song SET artist_id = $1, song_name = $2, release_date = $3, lyrics = $4, link = $5 WHERE id = $6"
+	query := "UPDATE songs SET song_name = $1, text = $2, link = $3 WHERE id = $4"
 	_, err := s.db.Exec(
 		context.Background(),
 		query,
-		newSong.Group, newSong.Name, newSong.ReleaseDate, newSong.Text, newSong.Link, id,
+		newSong.Name, newSong.Text, newSong.Link, id,
 	)
 	return err
 }

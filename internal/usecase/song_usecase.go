@@ -4,6 +4,7 @@ import (
 	"context"
 	"effectiveMobile/internal/storage"
 	"effectiveMobile/models"
+	"log"
 )
 
 type SongUsecase interface {
@@ -17,10 +18,16 @@ type SongUsecase interface {
 
 type songUsecase struct {
 	songStorage storage.SongStorage
+	infoLog     *log.Logger
+	errorLog    *log.Logger
 }
 
-func NewSongUsecase(s storage.SongStorage) SongUsecase {
-	return &songUsecase{songStorage: s}
+func NewSongUsecase(s storage.SongStorage, infoLog, errorLog *log.Logger) SongUsecase {
+	return &songUsecase{
+		songStorage: s,
+		infoLog:     infoLog,
+		errorLog:    errorLog,
+	}
 }
 
 func (uc *songUsecase) GetAllSongs(ctx context.Context) ([]models.Song, error) {
