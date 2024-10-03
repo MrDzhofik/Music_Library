@@ -10,7 +10,7 @@ import (
 )
 
 type SongStorage interface {
-	GetAllSongs(ctx context.Context) ([]models.Song, error)
+	GetAllSongs(ctx context.Context, filter string) ([]models.Song, error)
 	GetSongByID(ctx context.Context, id int) (models.Song, error)
 	AddSong(ctx context.Context, song models.Song) error
 	UpdateSong(ctx context.Context, id int, song models.Song) error
@@ -32,16 +32,30 @@ func NewSongStorage(db *pgx.Conn, infoLog, errorLog *log.Logger) SongStorage {
 	}
 }
 
-func (s *songStorage) GetAllSongs(ctx context.Context) ([]models.Song, error) {
+func (s *songStorage) GetAllSongs(ctx context.Context, filter string) ([]models.Song, error) {
 	s.infoLog.Print("Запускаем SQL запрос по получению всех песен")
-	query := `SELECT song_name name, group_name, release_date, link 
-	FROM songs s
-	INNER JOIN groups g ON g.id = s.group_id`
-
 	var songs []models.Song
-	err := pgxscan.Select(context.Background(), s.db, &songs, query)
-	if err != nil {
-		s.errorLog.Println(err)
+	var err error
+	if filter == "" {
+
+		query := `SELECT song_name name, group_name, release_date, link 
+					FROM songs s
+					INNER JOIN groups g ON g.id = s.group_id`
+
+		err = pgxscan.Select(context.Background(), s.db, &songs, query)
+		if err != nil {
+			s.errorLog.Println(err)
+		}
+	} else {
+		query := `SELECT song_name name, group_name, release_date, link 
+					FROM songs s
+					INNER JOIN groups g ON g.id = s.group_id
+					WHERE s.song_name LIKE '%' || $1  || '%'`
+
+		err = pgxscan.Select(context.Background(), s.db, &songs, query, filter)
+		if err != nil {
+			s.errorLog.Println(err)
+		}
 	}
 
 	return songs, err

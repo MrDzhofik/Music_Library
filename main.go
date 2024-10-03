@@ -13,21 +13,28 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func main() {
-	// Настройка логгеров
+func setupRouter(songHandler *handlers.SongHandler) *mux.Router {
+	router := mux.NewRouter()
+	router.HandleFunc("/api/songs", songHandler.GetAllSongs).Methods("GET")
+	router.HandleFunc("/api/song/{id:[0-9]+}", songHandler.GetSongByID).Methods("GET")
+	router.HandleFunc("/api/song/add", songHandler.AddSong).Methods("POST")
+	router.HandleFunc("/api/song/delete", songHandler.DeleteSong).Methods("DELETE")
+	router.HandleFunc("/api/song/update", songHandler.UpdateSong).Methods("PUT")
 
+	return router
+}
+
+func setupLoggers() (*log.Logger, *log.Logger, *os.File, *os.File) {
 	// Открытие файлов логов
 	infoFile, err := os.OpenFile("info.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer infoFile.Close()
 
 	errorFile, err := os.OpenFile("error.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer errorFile.Close()
 
 	infoLog := log.New(infoFile, "INFO\t", log.Ldate|log.Ltime)
 
@@ -40,6 +47,15 @@ func main() {
 	if _, err := errorFile.WriteString("------------------------------\n"); err != nil {
 		errorLog.Print(err)
 	}
+
+	return infoLog, errorLog, infoFile, errorFile
+}
+
+func main() {
+	// Настройка логгеров
+	infoLog, errorLog, infoFile, errorFile := setupLoggers()
+	defer infoFile.Close()
+	defer errorFile.Close()
 
 	// Подключаем базу
 	conn, err := storage.GetPostgres()
@@ -55,12 +71,7 @@ func main() {
 	songHandler := handlers.NewSongHandler(songUsecase, infoLog, errorLog)
 
 	// Настройка роутера
-	router := mux.NewRouter()
-	router.HandleFunc("/api/songs", songHandler.GetAllSongs).Methods("GET")
-	router.HandleFunc("/api/song/{id:[0-9]+}", songHandler.GetSongByID).Methods("GET")
-	router.HandleFunc("/api/song/add", songHandler.AddSong).Methods("POST")
-	router.HandleFunc("/api/song/delete", songHandler.DeleteSong).Methods("DELETE")
-	router.HandleFunc("/api/song/update", songHandler.UpdateSong).Methods("PUT")
+	router := setupRouter(songHandler)
 
 	// Создаем новую структуру http.Server, оставляем тот же адрес и роутер, а для ошибок используем наш логгер
 	srv := &http.Server{

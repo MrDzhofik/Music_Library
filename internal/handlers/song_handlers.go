@@ -39,8 +39,9 @@ func NewSongHandler(songUsecase usecase.SongUsecase, infoLog, errorLog *log.Logg
 // Просмотр всех песен
 func (h *SongHandler) GetAllSongs(w http.ResponseWriter, r *http.Request) {
 	h.infoLog.Println("Получаем все песни")
+	filter := r.URL.Query().Get("filter")
 	ctx := context.Background()
-	songs, err := h.songUsecase.GetAllSongs(ctx)
+	songs, err := h.songUsecase.GetAllSongs(ctx, filter)
 
 	if err != nil {
 		h.errorLog.Printf("Неправильный запрос: %v", err)

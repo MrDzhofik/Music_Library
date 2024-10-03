@@ -8,7 +8,7 @@ import (
 )
 
 type SongUsecase interface {
-	GetAllSongs(ctx context.Context) ([]models.Song, error)
+	GetAllSongs(ctx context.Context, filter string) ([]models.Song, error)
 	GetSongByID(ctx context.Context, id int) (models.Song, error)
 	AddSong(ctx context.Context, song models.Song) error
 	UpdateSong(ctx context.Context, id int, song models.Song) error
@@ -30,8 +30,8 @@ func NewSongUsecase(s storage.SongStorage, infoLog, errorLog *log.Logger) SongUs
 	}
 }
 
-func (uc *songUsecase) GetAllSongs(ctx context.Context) ([]models.Song, error) {
-	return uc.songStorage.GetAllSongs(ctx)
+func (uc *songUsecase) GetAllSongs(ctx context.Context, filter string) ([]models.Song, error) {
+	return uc.songStorage.GetAllSongs(ctx, filter)
 }
 
 func (uc *songUsecase) GetSongByID(ctx context.Context, id int) (models.Song, error) {
