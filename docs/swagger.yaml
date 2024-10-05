@@ -1,0 +1,149 @@
+definitions:
+  handlers.BadRequest:
+    properties:
+      message:
+        type: string
+    type: object
+  models.Song:
+    properties:
+      group:
+        type: integer
+      group_name:
+        type: string
+      id:
+        type: integer
+      link:
+        type: string
+      releaseDate:
+        type: string
+      song:
+        type: string
+      text:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /api/song/{id}:
+    get:
+      description: get song by ID
+      parameters:
+      - description: Song ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Song'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.BadRequest'
+      summary: Give Song with certain ID
+      tags:
+      - song
+  /api/song/create:
+    post:
+      consumes:
+      - application/json
+      description: Add song to library
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Add new song
+      tags:
+      - song
+  /api/song/delete:
+    delete:
+      consumes:
+      - application/json
+      description: Delete song from library by ID
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Delete song
+      tags:
+      - song
+  /api/song/update:
+    put:
+      consumes:
+      - application/json
+      description: Update song in library by ID
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Update song
+      tags:
+      - song
+  /api/songs:
+    get:
+      description: get songs
+      parameters:
+      - description: Song name
+        in: query
+        name: name
+        required: true
+        type: string
+      - description: Group name
+        in: query
+        name: group
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Song'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.BadRequest'
+      summary: List songs
+      tags:
+      - song
+swagger: "2.0"

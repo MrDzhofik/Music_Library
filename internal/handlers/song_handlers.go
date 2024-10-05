@@ -29,6 +29,10 @@ type SongRequest struct {
 	NewSong models.Song `json:"song"`
 }
 
+type BadRequest struct {
+	Message string `json:"message"`
+}
+
 func NewSongHandler(songUsecase usecase.SongUsecase, infoLog, errorLog *log.Logger) *SongHandler {
 	return &SongHandler{
 		songUsecase: songUsecase,
@@ -36,12 +40,22 @@ func NewSongHandler(songUsecase usecase.SongUsecase, infoLog, errorLog *log.Logg
 		errorLog:    errorLog}
 }
 
-// Просмотр всех песен
+// Get all songs godoc
+// @Summary      List songs
+// @Description  get songs
+// @Tags         song
+// @Produce      json
+// @Param        name   query      string  true  "Song name"
+// @Param        group   query      string  true  "Group name"
+// @Success      200  {object}  []models.Song
+// @Failure      400  {object}  BadRequest
+// @Router       /api/songs [get]
 func (h *SongHandler) GetAllSongs(w http.ResponseWriter, r *http.Request) {
 	h.infoLog.Println("Получаем все песни")
-	filter := r.URL.Query().Get("filter")
+	filterName := r.URL.Query().Get("name")
+	filterGroup := r.URL.Query().Get("group")
 	ctx := context.Background()
-	songs, err := h.songUsecase.GetAllSongs(ctx, filter)
+	songs, err := h.songUsecase.GetAllSongs(ctx, filterName, filterGroup)
 
 	if err != nil {
 		h.errorLog.Printf("Неправильный запрос: %v", err)
@@ -50,7 +64,7 @@ func (h *SongHandler) GetAllSongs(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(songs) == 0 {
-		http.Error(w, "Библиотека пуста!", http.StatusNoContent)
+		http.Error(w, "Нет подходящих песен!", http.StatusOK)
 		return
 	}
 
@@ -58,7 +72,15 @@ func (h *SongHandler) GetAllSongs(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(songs)
 }
 
-// Просмотр одной песни по id
+// Get one song by ID godoc
+// @Summary      Give Song with certain ID
+// @Description  get song by ID
+// @Tags         song
+// @Produce      json
+// @Param        id   path      int  true  "Song ID"
+// @Success      200  {object}  models.Song
+// @Failure      400  {object}  BadRequest
+// @Router       /api/song/{id} [get]
 func (h *SongHandler) GetSongByID(w http.ResponseWriter, r *http.Request) {
 	h.infoLog.Println("Получаем песню по ID")
 	url := r.URL
@@ -86,6 +108,16 @@ func (h *SongHandler) GetSongByID(w http.ResponseWriter, r *http.Request) {
 //  "song": "Supermassive Black Hole"
 // }
 
+// Add new song
+// @Summary      Add new song
+// @Description  Add song to library
+// @Tags         song
+// @Accept       json
+// @Produce      json
+// @Success      200  {string}  message
+// @Failure      400  {string}  http.BadRequest
+// @Failure      500  {string}  http.InternalServerError
+// @Router       /api/song/create [post]
 func (h *SongHandler) AddSong(w http.ResponseWriter, r *http.Request) {
 	h.infoLog.Println("Добавляем песню")
 	var song AddSongRequest
@@ -124,7 +156,16 @@ func (h *SongHandler) AddSong(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"message": "Песня добавлена успешно"})
 }
 
-// Обновление песни через id и названием песни
+// Update new song
+// @Summary      Update song
+// @Description  Update song in library by ID
+// @Tags         song
+// @Accept       json
+// @Produce      json
+// @Success      200  {string}  message
+// @Failure      400  {string}  http.BadRequest
+// @Failure      500  {string}  http.InternalServerError
+// @Router       /api/song/update [put]
 func (h *SongHandler) UpdateSong(w http.ResponseWriter, r *http.Request) {
 	h.infoLog.Println("Обновляем песню по ID")
 	var newSong SongRequest
@@ -150,7 +191,15 @@ func (h *SongHandler) UpdateSong(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"message": "Песня успешно изменена"})
 }
 
-// Удаление песни по id
+// @Summary      Delete song
+// @Description  Delete song from library by ID
+// @Tags         song
+// @Accept       json
+// @Produce      json
+// @Success      200  {string}  message
+// @Failure      400  {string}  http.BadRequest
+// @Failure      500  {string}  http.InternalServerError
+// @Router       /api/song/delete [delete]
 func (h *SongHandler) DeleteSong(w http.ResponseWriter, r *http.Request) {
 	h.infoLog.Println("Удаляем песню по ID")
 	var songID SongIDRequest
